@@ -15,6 +15,8 @@ struct EditExpenseView: View {
     @State private var selectedCategory: ExpenseCategory
     @State private var showCategoryPicker = false
     @Environment(\.presentationMode) var presentationMode
+    @State private var selectedDate = Date()
+    @State private var showDatePicker = false
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isNotesFieldFocused: Bool
     @State private var showNotesInput: Bool
@@ -43,7 +45,7 @@ struct EditExpenseView: View {
                     .padding()
                 
                 // Amount Display
-                Text("-Rp\(amount.isEmpty ? "0" : amount)")
+                Text("-Rp\(formattedAmount.isEmpty ? "0" : formattedAmount)")
                     .font(.largeTitle)
                     .foregroundColor(.red)
                     .padding()
@@ -78,8 +80,14 @@ struct EditExpenseView: View {
                 
                 // Date and Category
                 HStack {
-                    Text(expense.date, style: .date)
-                        .foregroundColor(.gray)
+                                        // Date Selection
+                                        DatePicker(
+                                            "",
+                                            selection: $selectedDate,
+                                            displayedComponents: .date
+                                        )
+                                        .labelsHidden()
+                                        .datePickerStyle(CompactDatePickerStyle())
                     
                     Spacer()
                     

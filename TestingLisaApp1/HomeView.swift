@@ -4,6 +4,7 @@
 //
 //  Created by Jeremy Lumban Toruan on 26/03/25.
 //
+
 import SwiftUI
 
 struct HomeView: View {
@@ -11,7 +12,10 @@ struct HomeView: View {
     @State private var showingAddExpense = false
     @State private var expenseToEdit: Expense? = nil
     @State private var showingEditSheet = false
-
+    @State private var currentDate = Date()
+    @State private var dragOffset: CGFloat = 0
+    
+    
     var totalSpent: Double {
         return viewModel.expenses.reduce(0) { $0 + $1.amount }
     }
@@ -22,7 +26,7 @@ struct HomeView: View {
         }
         return 0
     }
-
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -46,6 +50,7 @@ struct HomeView: View {
                 }
                 
                 Spacer()
+
                 
                 // ADD BUTTON
                 HStack {
@@ -62,7 +67,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("Expense Tracker")
+            
             .sheet(isPresented: $showingAddExpense) {
                 AddExpenseView(viewModel: viewModel, initialMode: .expense)
             }
@@ -154,6 +159,19 @@ struct HeaderView: View {
             Text("You're on track of your savings goals!")
                 .font(.caption)
                 .foregroundColor(.gray)
+            
+            // DATE HEADER
+                           HStack {
+                               Spacer()
+                               Text(Date(), style: .date)
+                                   .font(.subheadline)
+                                   .foregroundColor(.black)
+                                   .padding(.horizontal)
+                                   .padding(.vertical, 10)
+                               Spacer()
+                           }
+                           .background(Color(.white).opacity(0.5))
+
         }
         .padding()
     }
@@ -220,3 +238,5 @@ struct ExpenseRow: View {
 #Preview {
     HomeView()
 }
+
+

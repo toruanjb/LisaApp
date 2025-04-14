@@ -3,8 +3,8 @@
 //  TestingLisaApp1
 //
 //  Created by Jeremy Lumban Toruan on 26/03/25.
+////
 //
-
 import SwiftUI
 
 class ExpenseViewModel: ObservableObject {
@@ -38,3 +38,5 @@ class ExpenseViewModel: ObservableObject {
         budget = Budget(amount: amount, timeframe: timeframe)
     }
 }
+
+

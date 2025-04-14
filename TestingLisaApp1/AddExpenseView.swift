@@ -12,6 +12,8 @@ struct AddExpenseView: View {
     @State private var amount: String = ""
     @State private var notes: String = ""
     @State private var selectedCategory: ExpenseCategory = .food // Default value
+    @State private var selectedDate = Date()
+    @State private var showDatePicker = false
     @State private var selectedMode: EntryMode
     @State private var showNotesInput = false
     @State private var showCategoryPicker = false
@@ -108,10 +110,16 @@ struct AddExpenseView: View {
                 }
                 
                 // Date and Category
-                HStack {
-                    Text(Date(), style: .date)
-                        .foregroundColor(.gray)
-                    
+                                    HStack {
+                                        // Date Selection
+                                        DatePicker(
+                                            "",
+                                            selection: $selectedDate,
+                                            displayedComponents: .date
+                                        )
+                                        .labelsHidden()
+                                        .datePickerStyle(CompactDatePickerStyle())
+                                        
                     Spacer()
                     
                     if selectedMode == .expense {
@@ -140,6 +148,23 @@ struct AddExpenseView: View {
                     .opacity(0)
                     .frame(width: 0, height: 0)
                     .focused($isAmountFieldFocused)
+                
+                // Date Picker (Shown conditionally)
+                                    if showDatePicker {
+                                        DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                                            .datePickerStyle(GraphicalDatePickerStyle())
+                                            .padding()
+                                            .background(Color(.systemBackground))
+                                            .cornerRadius(10)
+                                            .shadow(radius: 2)
+                                            .padding()
+                                        
+                                        Button("Done") {
+                                            showDatePicker = false
+                                        }
+                                        .foregroundColor(.blue)
+                                        .padding(.bottom)
+                                    }
                 
                 // Save Button
                 Button(action: {
