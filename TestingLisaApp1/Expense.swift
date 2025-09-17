@@ -1,6 +1,6 @@
 import Foundation
 
-struct Expense: Identifiable {
+struct Expense: Identifiable, Codable {
     let id: UUID
     let amount: Double
     let category: ExpenseCategory
@@ -24,7 +24,7 @@ struct Expense: Identifiable {
     }
 }
 
-enum ExpenseCategory: String, CaseIterable {
+enum ExpenseCategory: String, CaseIterable, Codable {
     case food = "Food"
     case transportation = "Transportation"
     case clothes = "Clothes"

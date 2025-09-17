@@ -6,12 +6,12 @@
 //
 import Foundation
 
-struct Budget {
+struct Budget: Codable {
     var amount: Double
     var timeframe: Timeframe
 }
 
-enum Timeframe: String, CaseIterable {
+enum Timeframe: String, CaseIterable, Codable {
     case daily = "Daily"
     case weekly = "Weekly"
     case monthly = "Monthly"

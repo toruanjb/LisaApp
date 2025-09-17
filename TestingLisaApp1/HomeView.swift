@@ -8,16 +8,22 @@
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject private var viewModel = ExpenseViewModel()
+    @EnvironmentObject private var viewModel: ExpenseViewModel
     @State private var showingAddExpense = false
     @State private var expenseToEdit: Expense? = nil
     @State private var showingEditSheet = false
-    @State private var currentDate = Date()
+    @State private var selectedDate = Date()
+    @State private var showDatePicker = false
     @State private var dragOffset: CGFloat = 0
     
+    var filteredExpenses: [Expense] {
+        return viewModel.expenses.filter { expense in
+            Calendar.current.isDate(expense.date, inSameDayAs: selectedDate)
+        }
+    }
     
     var totalSpent: Double {
-        return viewModel.expenses.reduce(0) { $0 + $1.amount }
+        return filteredExpenses.reduce(0) { $0 + $1.amount }
     }
     
     var savedAmount: Double {
@@ -28,31 +34,56 @@ struct HomeView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
-                // HEADER SECTION
-                HeaderView(totalSpent: totalSpent, savedAmount: savedAmount, budget: viewModel.budget)
+                HeaderView(
+                    totalSpent: totalSpent,
+                    savedAmount: savedAmount,
+                    budget: viewModel.budget,
+                    selectedDate: $selectedDate,
+                    showDatePicker: $showDatePicker
+                )
                 
-                // LIST OF TRANSACTIONS
-                List {
-                    ForEach(viewModel.expenses) { expense in
-                        ExpenseRow(
-                            expense: expense,
-                            onEdit: {
-                                expenseToEdit = expense
-                                showingEditSheet = true
-                            },
-                            onDelete: {
-                                viewModel.deleteExpense(id: expense.id)
-                            }
-                        )
+                if showDatePicker {
+                    DatePicker("Select date", selection: $selectedDate, displayedComponents: .date)
+                        .datePickerStyle(GraphicalDatePickerStyle())
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                        .transition(.opacity)
+                }
+                
+                if filteredExpenses.isEmpty {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 50))
+                            .foregroundColor(.gray)
+                        Text("No expenses on \(selectedDate, formatter: dateFormatter)")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                } else {
+                    List {
+                        ForEach(filteredExpenses) { expense in
+                            ExpenseRow(
+                                expense: expense,
+                                onEdit: {
+                                    expenseToEdit = expense
+                                    showingEditSheet = true
+                                },
+                                onDelete: {
+                                    viewModel.deleteExpense(id: expense.id)
+                                }
+                            )
+                        }
                     }
                 }
                 
                 Spacer()
-
                 
-                // ADD BUTTON
                 HStack {
                     Spacer()
                     Button(action: {
@@ -67,9 +98,10 @@ struct HomeView: View {
                     }
                 }
             }
-            
             .sheet(isPresented: $showingAddExpense) {
                 AddExpenseView(viewModel: viewModel, initialMode: .expense)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingEditSheet, onDismiss: {
                 expenseToEdit = nil
@@ -80,13 +112,20 @@ struct HomeView: View {
             }
         }
     }
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }
 }
 
-// MARK: - Supporting Views
 struct HeaderView: View {
     let totalSpent: Double
     let savedAmount: Double
     let budget: Budget?
+    @Binding var selectedDate: Date
+    @Binding var showDatePicker: Bool
     
     var body: some View {
         VStack {
@@ -114,7 +153,6 @@ struct HeaderView: View {
                     .bold()
                 
                 HStack {
-                    // Saved Amount
                     VStack {
                         Text("Saved")
                             .font(.caption)
@@ -125,23 +163,14 @@ struct HeaderView: View {
                     }
                     .frame(maxWidth: .infinity)
                     
-                    // Budget Display
                     VStack {
                         Text("Budget")
                             .font(.caption)
                         if let budget = budget {
-                            VStack {
-                                Text("Rp\(Int(budget.amount))")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
-                                    .bold()
-                                
-//                                if let notes = budget.notes, !notes.isEmpty {
-//                                    Text(notes)
-//                                        .font(.caption)
-//                                        .foregroundColor(.gray)
-//                                }
-                            }
+                            Text("Rp\(Int(budget.amount))")
+                                .font(.subheadline)
+                                .foregroundColor(.blue)
+                                .bold()
                         } else {
                             Text("-")
                                 .font(.title3)
@@ -160,20 +189,32 @@ struct HeaderView: View {
                 .font(.caption)
                 .foregroundColor(.gray)
             
-            // DATE HEADER
-                           HStack {
-                               Spacer()
-                               Text(Date(), style: .date)
-                                   .font(.subheadline)
-                                   .foregroundColor(.black)
-                                   .padding(.horizontal)
-                                   .padding(.vertical, 10)
-                               Spacer()
-                           }
-                           .background(Color(.white).opacity(0.5))
-
+            Button(action: {
+                withAnimation {
+                    showDatePicker.toggle()
+                }
+            }) {
+                HStack {
+                    Image(systemName: "calendar")
+                        .foregroundColor(.blue)
+                    
+                    Text(selectedDate, style: .date)
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                        .rotationEffect(Angle(degrees: showDatePicker ? 180 : 0))
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.top, 4)
+            }
         }
-        .padding()
+        .padding(.bottom, 8)
     }
 }
 
@@ -186,13 +227,11 @@ struct ExpenseRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Icon with fixed size container
             Image(systemName: expense.category.icon)
                 .foregroundColor(.blue)
                 .font(.title2)
                 .frame(width: 40, height: 40)
             
-            // Text content with proper vertical alignment
             VStack(alignment: .leading, spacing: 4) {
                 Text(expense.category.rawValue)
                     .font(.headline)
@@ -205,11 +244,10 @@ struct ExpenseRow: View {
             
             Spacer()
             
-            // Amount with consistent padding
             Text("-Rp\(Int(expense.amount))")
                 .foregroundColor(.red)
         }
-        .contentShape(Rectangle()) // Makes the entire row tappable
+        .contentShape(Rectangle())
         .background(isPressed ? Color.gray.opacity(0.15) : Color.clear)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
         .confirmationDialog("Expense Options", isPresented: $showingActionSheet, titleVisibility: .visible) {
@@ -224,10 +262,7 @@ struct ExpenseRow: View {
             Text("What would you like to do with this expense?")
         }
         .onTapGesture {
-            // Visual feedback when tapped
             isPressed = true
-            
-            // Small delay before showing the action sheet
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isPressed = false
                 showingActionSheet = true
@@ -235,8 +270,8 @@ struct ExpenseRow: View {
         }
     }
 }
+
 #Preview {
     HomeView()
+        .environmentObject(ExpenseViewModel())
 }
-
-
